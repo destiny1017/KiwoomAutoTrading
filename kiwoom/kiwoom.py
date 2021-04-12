@@ -28,7 +28,7 @@ class Kiwoom(QAxWidget):
 
     def event_slots(self):
         self.OnEventConnect.connect(self.login_slot) # 로그인 처리 이벤트
-        self.OnReceiveTrData(self.trdata_slot) # TR 요청 이벤트
+        self.OnReceiveTrData.connect(self.trdata_slot) # TR 요청 이벤트
 
     def login_slot(self, errCode):
         print(errors(errCode))
@@ -52,3 +52,22 @@ class Kiwoom(QAxWidget):
         self.dynamicCall("SetInputValue(String, String)", "비밀번호입력매체구분", "00")
         self.dynamicCall("SetInputValue(String, String)", "조회구분", "2")
         self.dynamicCall("CommRqData(String, String, int, String)", "예수금상세현황요청", "opw00001", "0", "2000")
+
+    def trdata_slot(self, sScrNo, sRQName, sTrCode, sRecordName, sPrevNext):
+        '''
+        * tr요청을 받는 구역
+        :param sScrNo: 스크린 번호
+        :param sRQName: 요청 시 정한 이름
+        :param sTrCode: 요청id, tr코드
+        :param sRecordName: 사용 안함
+        :param sPrevNext: 다음 페이지가 있는지
+        :return:
+        '''
+
+        if sRQName == "예수금상세현황요청":
+            deposit = self.dynamicCall("GetCommData(String, String, int, String)", sTrCode, sRQName, 0, "예수금")
+            print("예수금 : %s" % int(deposit))
+
+            ok_deposit = self.dynamicCall("GetCommData(String, String, int, String)", sTrCode, sRQName, 0, "출금가능금액")
+            print("출금가능금액 : %s" % int(ok_deposit))
+
