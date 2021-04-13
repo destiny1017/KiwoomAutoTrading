@@ -95,12 +95,10 @@ class Kiwoom(QAxWidget):
 
             total_buy_money = self.dynamicCall("GetCommData(String, String, int, String)", sTrCode, sRQName, 0, "총매입금액")
             total_buy_money_result = int(total_buy_money)
-
             print("총매입금액 : %s" % total_buy_money_result)
 
             total_earning_ratio = self.dynamicCall("GetCommData(String, String, int, String)", sTrCode, sRQName, 0, "총수익률(%)")
             total_earning_ratio_result = float(total_earning_ratio)
-
-            print("총수익률 : %s%%" % total_buy_money_result)
+            print("총수익률 : %s%%" % total_earning_ratio_result)
 
             self.detail_account_info_event_loop_2.exit()
