@@ -18,6 +18,10 @@ class Kiwoom(QAxWidget):
         self.account_num = None
         #######################
 
+        ####### 계좌 관련 변수
+        self.use_money = 0
+        self.use_money_percent = 0.5
+
         self.get_ocx_instance()
         self.event_slots()
         self.signal_login_commConnect()
@@ -86,6 +90,9 @@ class Kiwoom(QAxWidget):
             deposit = self.dynamicCall("GetCommData(String, String, int, String)", sTrCode, sRQName, 0, "예수금")
             print("예수금 : %s" % int(deposit))
 
+            self.use_money = int(deposit) * self.use_money_percent
+            self.use_money = self.use_money / 4
+
             ok_deposit = self.dynamicCall("GetCommData(String, String, int, String)", sTrCode, sRQName, 0, "출금가능금액")
             print("출금가능금액 : %s" % int(ok_deposit))
 
@@ -100,5 +107,18 @@ class Kiwoom(QAxWidget):
             total_earning_ratio = self.dynamicCall("GetCommData(String, String, int, String)", sTrCode, sRQName, 0, "총수익률(%)")
             total_earning_ratio_result = float(total_earning_ratio)
             print("총수익률 : %s%%" % total_earning_ratio_result)
+
+            rows = self.dynamicCall("GetRepeatCnt(QString, QString)", sTrCode, sRQName)
+            cnt = 0
+
+            for i in range (rows):
+                code = self.dynamicCall("GetCommData(QString, QString, int, QString)", sTrCode, sRQName, cnt, "종목번호")
+                stock_quantity = self.dynamicCall("GetCommData(QString, QString, int, QString)", sTrCode, sRQName, i, "보유수량")
+                buy_price = self.dynamicCall("GetCommData(QString, QString, int, QString)", sTrCode, sRQName, i, "매입가")
+                learn_rate = self.dynamicCall("GetCommData(QString, QString, int, QString)", sTrCode, sRQName, i, "수익률(%)")
+                current_price = self.dynamicCall("GetCommData(QString, QString, int, QString)", sTrCode, sRQName, i, "현재가")
+                total_chegual_price = self.dynamicCall("GetCommData(QString, QString, int, QString)", sTrCode, sRQName, i, "매입금액")
+                possible_quantity = self.dynamicCall("GetCommData(QString, QString, int, QString)", sTrCode, sRQName, i, "매매가능수량")
+
 
             self.detail_account_info_event_loop_2.exit()
