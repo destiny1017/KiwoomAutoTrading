@@ -16,6 +16,7 @@ class Kiwoom(QAxWidget):
 
         ####### 변수 모음
         self.account_num = None
+        self.account_stock_dict = {}
         #######################
 
         ####### 계좌 관련 변수
@@ -113,12 +114,35 @@ class Kiwoom(QAxWidget):
 
             for i in range (rows):
                 code = self.dynamicCall("GetCommData(QString, QString, int, QString)", sTrCode, sRQName, cnt, "종목번호")
+                code = code.strip()[1:]  # A3021 형식의 코드가 반환되므로 첫번째 문자 제거
+
+                code_nm = self.dynamicCall("GetCommData(QString, QString, int, QString)", sTrCode, sRQName, i, "종목명")
                 stock_quantity = self.dynamicCall("GetCommData(QString, QString, int, QString)", sTrCode, sRQName, i, "보유수량")
                 buy_price = self.dynamicCall("GetCommData(QString, QString, int, QString)", sTrCode, sRQName, i, "매입가")
                 learn_rate = self.dynamicCall("GetCommData(QString, QString, int, QString)", sTrCode, sRQName, i, "수익률(%)")
                 current_price = self.dynamicCall("GetCommData(QString, QString, int, QString)", sTrCode, sRQName, i, "현재가")
                 total_chegual_price = self.dynamicCall("GetCommData(QString, QString, int, QString)", sTrCode, sRQName, i, "매입금액")
                 possible_quantity = self.dynamicCall("GetCommData(QString, QString, int, QString)", sTrCode, sRQName, i, "매매가능수량")
+
+                if code in self.account_stock_dict:
+                    pass
+                else:
+                    self.account_stock_dict.update({code: {}})
+
+                code_nm = code_nm.strip()
+                stock_quantity = int(stock_quantity.strip())
+                buy_price = int(buy_price.strip())
+                learn_rate = float(learn_rate.strip())
+                current_price = int(current_price.strip())
+                total_chegual_price = int(total_chegual_price.strip())
+
+                self.account_stock_dict[code].update({"": code_nm})
+                self.account_stock_dict[code].update({"": code_nm})
+                self.account_stock_dict[code].update({"": code_nm})
+                self.account_stock_dict[code].update({"": code_nm})
+                self.account_stock_dict[code].update({"": code_nm})
+                self.account_stock_dict[code].update({"": code_nm})
+                self.account_stock_dict[code].update({"": code_nm})
 
 
             self.detail_account_info_event_loop_2.exit()
