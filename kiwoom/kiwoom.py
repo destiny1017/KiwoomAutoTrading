@@ -1,3 +1,5 @@
+import os
+
 from PyQt5.QAxContainer import *
 from PyQt5.QtCore import *
 from config.errorCode import *
@@ -21,6 +23,7 @@ class Kiwoom(QAxWidget):
         #######################
 
         ####### 변수 모음
+        self.portfolio_stock_dict = {}
         self.account_num = None
         self.account_stock_dict = {}
         self.not_account_stock_dict = {}
@@ -43,7 +46,9 @@ class Kiwoom(QAxWidget):
         self.detail_account_mystock() # 계좌평가 잔고내역 정보 요청
         self.not_concluded_account() # 미체결 내역 요청
 
-        self.calculator_fnc() # 종목 분석용, 임시용으로 실행
+        # self.calculator_fnc() # 종목 분석용, 임시용으로 실행
+        self.read_code() # 저장된 종목들을 불러옴
+        self.screen_number_setting() # 스크린 번호를 할당
 
     def get_ocx_instance(self):
         self.setControl("KHOPENAPI.KHOpenAPICtrl.1") # 상속받은 QAxWidget 클래스의 메서드. 응용프로그램을 제어할 수 있게 해줌.
@@ -378,3 +383,30 @@ class Kiwoom(QAxWidget):
 
         self.dynamicCall("CommRqData(QString, QString, int, QString)", "주식일봉차트조회", "opt10081", sPrevNext, self.screen_calculation_stock)
         self.calcuator_event_loop.exec_()
+
+
+    def read_code(self):
+
+        if os.path.exists("files/condition_stock.txt"):
+            f = open("files/condition_stock.txt", "r", encoding="utf-8")
+
+            lines = f.readlines()
+            for line in lines:
+                if line != "":
+                    ls = line.split("\t")
+
+                    stock_code = ls[0]
+                    stock_name = ls[1]
+                    stock_price = int(ls[2].split("\n")[0])
+                    stock_price = abs(stock_price)
+
+                    self.portfolio_stock_dict.update({stock_code: {"종목명":stock_name, "현재가":stock_price}})
+
+            f.close()
+
+            print(self.portfolio_stock_dict)
+
+
+    def screen_number_setting(self):
+
+        screen_overwite = []
