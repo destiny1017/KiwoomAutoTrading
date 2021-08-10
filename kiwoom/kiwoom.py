@@ -20,6 +20,8 @@ class Kiwoom(QAxWidget):
         ####### 스크린번호 모음
         self.screen_my_info = "2000"
         self.screen_calculation_stock = "4000"
+        self.screen_real_stock = "5000" # 종목별로 할당할 스크린 번호
+        self.screen_meme_stock = "6000" # 종목별 할당할 주문용 스크린 번호
         #######################
 
         ####### 변수 모음
@@ -409,4 +411,55 @@ class Kiwoom(QAxWidget):
 
     def screen_number_setting(self):
 
-        screen_overwite = []
+        screen_overwrite = []
+
+        # 계좌평가잔고내역에 있는 종목들
+        for code in self.account_stock_dict.keys():
+            if code not in screen_overwrite:
+                screen_overwrite.append(code)
+
+        # 미체결에 있는 종목들
+        for order_number in self.not_account_stock_dict.keys():
+            code = self.not_account_stock_dict[order_number]['종목코드']
+            if code not in screen_overwrite:
+                screen_overwrite.append(code)
+
+        # 포트폴리오에 담겨 있는 종목들
+        for code in self.portfolio_stock_dict.keys():
+            if code not in screen_overwrite:
+                screen_overwrite.append(code)
+
+        # 스크린 번호 할당
+        cnt = 0
+        for code in screen_overwrite:
+
+            temp_screen = int(self.screen_real_stock)
+            meme_screen = int(self.screen_meme_stock)
+
+            if (cnt % 50) == 0:
+                temp_screen += 1
+                self.screen_real_stock = str(temp_screen)
+
+            if (cnt % 50) == 0:
+                meme_screen += 1
+                self.screen_meme_stock = str(meme_screen)
+
+            if code in self.portfolio_stock_dict.keys():
+                self.portfolio_stock_dict[code].update({
+                    "스크린번호": str(self.screen_real_stock),
+                    "주문용스크린번호": str(self.screen_meme_stock)
+                })
+
+            elif code not in self.portfolio_stock_dict.keys():
+                self.portfolio_stock_dict.update({code: {
+                    "스크린번호": str(self.screen_real_stock),
+                    "주문용스크린번호": str(self.screen_meme_stock)
+                }})
+
+            cnt += 1
+
+        print(self.portfolio_stock_dict)
+
+
+
+
