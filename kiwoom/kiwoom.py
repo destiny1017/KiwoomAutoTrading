@@ -4,12 +4,15 @@ from PyQt5.QAxContainer import *
 from PyQt5.QtCore import *
 from config.errorCode import *
 from PyQt5.QtTest import  *
+from config.kiwoomType import *
 
 class Kiwoom(QAxWidget):
 
     def __init__(self):
         super().__init__()
         print("키움클래스")
+
+        self.realType = RealType()
 
         ####### event loop 모음
         self.login_event_loop = None
@@ -22,6 +25,7 @@ class Kiwoom(QAxWidget):
         self.screen_calculation_stock = "4000"
         self.screen_real_stock = "5000" # 종목별로 할당할 스크린 번호
         self.screen_meme_stock = "6000" # 종목별 할당할 주문용 스크린 번호
+        self.screen_start_stop_real = "1000"
         #######################
 
         ####### 변수 모음
@@ -41,6 +45,7 @@ class Kiwoom(QAxWidget):
 
         self.get_ocx_instance()
         self.event_slots()
+        self.real_event_slots()
         self.signal_login_commConnect()
 
         self.get_account_info() # 계좌 정보 요청
@@ -52,12 +57,21 @@ class Kiwoom(QAxWidget):
         self.read_code() # 저장된 종목들을 불러옴
         self.screen_number_setting() # 스크린 번호를 할당
 
+        self.dynamicCall("SetRealReg(QString, QString, QString, QString)", self.screen_start_stop_real, '',
+                         self.realType.REALTYPE['장시작시간']['장운영구분'], "0")
+
+
+
+
     def get_ocx_instance(self):
         self.setControl("KHOPENAPI.KHOpenAPICtrl.1") # 상속받은 QAxWidget 클래스의 메서드. 응용프로그램을 제어할 수 있게 해줌.
 
     def event_slots(self):
         self.OnEventConnect.connect(self.login_slot) # 로그인 처리 이벤트
         self.OnReceiveTrData.connect(self.trdata_slot) # TR 요청 이벤트
+
+    def real_event_slots(self):
+        self.OnReceiveRealData.connect(self.realdata_slot)
 
     def login_slot(self, errCode):
         print(errors(errCode))
@@ -460,6 +474,18 @@ class Kiwoom(QAxWidget):
 
         print(self.portfolio_stock_dict)
 
+    def realdata_slot(self, sCode, sRealType, sRealData):
+        print("realdata_slot()")
+        if sRealType == "장시작시간":
+            fid = self.realType.REALTYPE[sRealType]['장운영구분']
+            value = self.dynamicCall("GetCommRealData(QString, int)", sCode, fid)
 
-
+            if value == '0':
+                print("장 시작 전")
+            elif value == '3':
+                print("장 시작")
+            elif value == '2':
+                print("장 종료, 동시호가로 넘어감")
+            elif value == '4':
+                print("3시30분 장 종료")
 
