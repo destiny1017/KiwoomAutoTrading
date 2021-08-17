@@ -56,6 +56,7 @@ class Kiwoom(QAxWidget):
         self.not_concluded_account() # 미체결 내역 요청
 
         # self.calculator_fnc() # 종목 분석용, 임시용으로 실행
+        self.get_condition_load() # 조건검색 리스트 불러오기
         self.read_code() # 저장된 종목들을 불러옴
         self.screen_number_setting() # 스크린 번호를 할당
 
@@ -76,6 +77,7 @@ class Kiwoom(QAxWidget):
     def event_slots(self):
         self.OnEventConnect.connect(self.login_slot) # 로그인 처리 이벤트
         self.OnReceiveTrData.connect(self.trdata_slot) # TR 요청 이벤트
+        self.OnReceiveConditionVer.connect(self.conditionVer_slot) # 조건검색 호출 이벤트
         self.OnReceiveMsg.connect(self.msg_slot)
 
     def real_event_slots(self):
@@ -129,6 +131,8 @@ class Kiwoom(QAxWidget):
 
         self.detail_account_info_event_loop.exec_()
 
+    def get_condition_load(self):
+        self.dynamicCall("GetConditionLoad()")
 
     def trdata_slot(self, sScrNo, sRQName, sTrCode, sRecordName, sPrevNext):
         '''
@@ -368,6 +372,15 @@ class Kiwoom(QAxWidget):
                 self.calcuator_event_loop.exit()
 
 
+    def get_condition_name_list(self):
+        condition_list = self.dynamicCall("GetConditionNameList()")
+        condition_list = condition_list.split(";")[:-1]
+        return condition_list
+
+    def exec_analysis(self):
+        code_list = self.get_condition_name_list()
+        print(code_list)
+
     def get_code_list_by_market(self, market_code):
         '''
         종목 코드들 반환
@@ -385,7 +398,7 @@ class Kiwoom(QAxWidget):
         :return:
         '''
 
-        code_list = self.get_code_list_by_market("10")
+        code_list = self.get_code_list_by_market("10") # '0' -> 코스피, '10' -> 코스닥
         print("코스닥 개수 %s" % len(code_list))
 
         for idx, code in enumerate(code_list):
@@ -482,6 +495,13 @@ class Kiwoom(QAxWidget):
             cnt += 1
 
         print(self.portfolio_stock_dict)
+
+
+    def conditionVer_slot(self, lRet, sMsg):
+        if lRet == 1:
+            self.exec_analysis()
+        print("==============================================================================")
+        print(sMsg)
 
     def realdata_slot(self, sCode, sRealType, sRealData):
         print("realdata_slot()")
