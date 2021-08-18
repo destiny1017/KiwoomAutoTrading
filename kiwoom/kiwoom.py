@@ -378,8 +378,15 @@ class Kiwoom(QAxWidget):
         return condition_list
 
     def exec_analysis(self):
-        code_list = self.get_condition_name_list()
-        print(code_list)
+        condition_list = self.get_condition_name_list()
+        print(condition_list)
+
+        for idx, condition in enumerate(condition_list):
+            cond_code = condition.split("^")[0]
+            cond_name = condition.split("^")[1]
+
+        self.dynamicCall("SendCondition(QString, QString, int, int)")
+
 
     def get_code_list_by_market(self, market_code):
         '''
