@@ -22,11 +22,12 @@ class Kiwoom(QAxWidget):
         #######################
 
         ####### 스크린번호 모음
-        self.screen_my_info = "2000"
-        self.screen_calculation_stock = "4000"
+        self.screen_my_info = "2000" # 내 계좌정보 스크린 번호
+        self.screen_calculation_stock = "4000" # 일봉데이터 스크린 번호
         self.screen_real_stock = "5000" # 종목별로 할당할 스크린 번호
         self.screen_meme_stock = "6000" # 종목별 할당할 주문용 스크린 번호
-        self.screen_start_stop_real = "1000"
+        self.screen_start_stop_real = "1000" # 장 시작 종료데이터 스크린 번호
+        self.screen_condition_stock = "3000" # 조건검색 데이터 스크린 번호
         #######################
 
         ####### 변수 모음
@@ -34,6 +35,7 @@ class Kiwoom(QAxWidget):
         self.account_num = None
         self.account_stock_dict = {}
         self.not_account_stock_dict = {}
+        self.condition_stock_dict = {}
         self.jango_dict = {}
         #######################
 
@@ -48,6 +50,7 @@ class Kiwoom(QAxWidget):
         self.get_ocx_instance()
         self.event_slots()
         self.real_event_slots()
+        self.condition_event_slots()
         self.signal_login_commConnect()
 
         self.get_account_info() # 계좌 정보 요청
@@ -77,12 +80,15 @@ class Kiwoom(QAxWidget):
     def event_slots(self):
         self.OnEventConnect.connect(self.login_slot) # 로그인 처리 이벤트
         self.OnReceiveTrData.connect(self.trdata_slot) # TR 요청 이벤트
-        self.OnReceiveConditionVer.connect(self.conditionVer_slot) # 조건검색 호출 이벤트
         self.OnReceiveMsg.connect(self.msg_slot)
 
     def real_event_slots(self):
         self.OnReceiveRealData.connect(self.realdata_slot)
         self.OnReceiveChejanData.connect(self.chejan_slot)
+
+    def condition_event_slots(self):
+        self.OnReceiveConditionVer.connect(self.conditionVer_slot)  # 조건검색 호출 이벤트
+        self.OnReceiveTrCondition.connect(self.trCondition_slot) # 조건검색 결과 수신 이벤트
 
     def login_slot(self, errCode):
         print(errors(errCode))
@@ -371,21 +377,43 @@ class Kiwoom(QAxWidget):
                 self.calcul_data.clear()
                 self.calcuator_event_loop.exit()
 
+    def trCondition_slot(self, sScrNo, strCodeList, strConditionName, nIndex, nNext):
+        '''
+         * 조건검색 결과 받는 함수
+        :param sScrNo: 화면번호
+        :param strCodeList: 종목코드 리스트
+        :param strConditionName: 조건식 이름
+        :param nIndex: 조건 고유번호
+        :param nNext: 연속조회 여부
+        :return:
+        '''
 
+        codeList = strCodeList.split(";")[:-1]
+
+        print("sScrNo : %s" % sScrNo)
+        print("strCodeList : %s" % strCodeList)
+        print("strConditionName : %s" % strConditionName)
+        print("nIndex : %s" % nIndex)
+        print("nNext : %s" % nNext)
+        print("조건검색 결과 종목 수 : %s" % len(codeList))
+
+    # 조건검색 리스트 가져오는 함수
     def get_condition_name_list(self):
         condition_list = self.dynamicCall("GetConditionNameList()")
         condition_list = condition_list.split(";")[:-1]
         return condition_list
 
+    # 조건검색데이터로 분석 시작 함수
     def exec_analysis(self):
         condition_list = self.get_condition_name_list()
         print(condition_list)
 
-        for idx, condition in enumerate(condition_list):
-            cond_code = condition.split("^")[0]
-            cond_name = condition.split("^")[1]
-
-        self.dynamicCall("SendCondition(QString, QString, int, int)")
+        # 첫번째 조건검색 실행
+        cond_code = condition_list[0].split("^")[0]
+        cond_name = condition_list[0].split("^")[1]
+        resultCode = self.dynamicCall("SendCondition(QString, QString, int, int)",
+                                      self.screen_condition_stock, cond_name, cond_code, 0)
+        print("조건검색호출 결과 %s" % resultCode)
 
 
     def get_code_list_by_market(self, market_code):
@@ -409,7 +437,7 @@ class Kiwoom(QAxWidget):
         print("코스닥 개수 %s" % len(code_list))
 
         for idx, code in enumerate(code_list):
-
+            # 분석이 끝난 연결 disconnect
             self.dynamicCall("DisconnectRealData(QString)", self.screen_calculation_stock)
 
             print("%s / %s : KOSDAQ Stock Code : %s is updating... " % (idx+1, len(code_list), code))
@@ -469,6 +497,11 @@ class Kiwoom(QAxWidget):
 
         # 포트폴리오에 담겨 있는 종목들
         for code in self.portfolio_stock_dict.keys():
+            if code not in screen_overwrite:
+                screen_overwrite.append(code)
+
+        # 조건검색결과에 담겨 있는 종목들
+        for code in self.condition_stock_dict.keys():
             if code not in screen_overwrite:
                 screen_overwrite.append(code)
 
